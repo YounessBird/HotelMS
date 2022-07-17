@@ -1,0 +1,77 @@
+@{
+Layout= "_AdminLayout";
+ViewData["Title"] = "HMS Rooms Dashboard";
+}
+@model HotelMS.ViewModel.AdminUserVM
+
+<!---<h1 class="text-primary">Manage Roooms</h1> -->
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-4"></div>
+        <div class="col-4">
+            <h1 class="text-primary text-center">Manage Users</h1>
+        </div>
+        <div class="col-4"></div>
+    </div>
+    <div class="row">
+        <div class="col-md-3">
+            <form method="post">
+                <div class="mb-3">
+                    <label asp-for="User.UName" class="form-label">User Name</label>
+                    <input asp-for="User.UName" type="text" class="form-control" id="UNameTb" placeholder="Room Name">
+                    <span id="ErrMsg" asp-validation-for="User.UName"></span>
+
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="User.UPhone" class="form-label">Phone</label>
+                    <input asp-for="User.UPhone" type="text" class="form-control" id="PhoneTb">
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="User.UGender " class="form-label">Gender</label>
+                    <!-------To BE CHANGED------>
+
+                    <select asp-for="User.UGender" asp-items="@Html.GetEnumSelectList<Gender>()"></select>
+                </div>
+
+
+                <div class="mb-3">
+                    <label asp-for="User.UAddress" class="form-label">Address</label>
+                    <input asp-for="User.UAddress" type="text" class="form-control" id="AddressTb">
+                    <span id="ErrMsg" asp-validation-for="User.UAddress" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="User.UPassword" class="form-label">Password</label>
+                    <input asp-for="User.UPassword" type="text" class="form-control" id="PasswordTb">
+                </div>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-block">Save</button>
+                </div>
+                <br />
+            </form>
+        </div>
+
+        <div class="col-md9">
+            <table class="table table-striped">
+                <thead>
+                    <tr class="bg-primary text-white">
+                        <th>Rooms</th>
+                        <th>number</th>
+                        <th>something</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (Room room in Model.RoomList)
+                    {
+                    <tr>
+                        <td>@room.RName</td>
+                        <td>@room.Id</td>
+                        <td>@room.RCategory.CatName</td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

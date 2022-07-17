@@ -1,0 +1,113 @@
+@{
+Layout= "_AdminLayout";
+ViewData["Title"] = "HMS Categories Dashboard";
+}
+@model HotelMS.ViewModel.AdminUserVM
+
+<div class="container-fluid" data-page-identifier="category" id="page">
+    <div class="row">
+        <div class="col-4"></div>
+        <div class="col-4">
+            <h1 class="text-primary text-center">Manage Categories</h1>
+        </div>
+        <div class="col-4"></div>
+    </div>
+    <div class="row">
+        <div class="col-md-3 mx-lg-5">
+            <form method="post" id="CatForm">
+                <div class="mb-3">
+                    @{
+                    dynamic toastObj = new System.Dynamic.ExpandoObject();
+                    toastObj.toastIt=false;
+                    toastObj.message="";
+
+                    var toast = TempData["success"] as string;
+                    if(toast == "saved") {
+                    toastObj.toastIt=true;
+                    toastObj.message="Category added successfully";
+                    };
+                    if(toast == "deleted" ){
+                    toastObj.toastIt=true;
+                    toastObj.message="Category deleted successfully";
+                    };
+                    if(toast == "edited" ){
+                    toastObj.toastIt=true;
+                    toastObj.message="Category edited successfully";
+                    }
+
+                    if(toastObj.toastIt){
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <strong>
+                            @toastObj.message
+                        </strong>
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    };
+                    }
+                </div>
+
+                <div asp-validation-summary="All" class="text-danger"></div>
+                <div class="mb-3">
+                    <input type="hidden" asp-for="Category.Id" id="CatId" />
+                    <label asp-for="Category.CatName" class="form-label">Category Name</label>
+                    <input asp-for="Category.CatName" type="text" class="form-control" id="InName"
+                        placeholder="Room Name">
+                    <span id="ErrMsg" asp-validation-for="Category.CatName" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Category.RRemarks" class="form-label">Remarks</label>
+                    <input asp-for="Category.RRemarks" type="text" class="form-control" id="InRemarks">
+                    <span id="ErrMsg" asp-validation-for="Category.RRemarks" class="text-danger"></span>
+
+                </div>
+                <div class="row">
+                    <div class="col d-grid">
+                        <button type="submit" class="btn btn-warning btn-block"
+                            formaction='@Url.Action("EditCategories")' form="CatForm">Edit</button>
+                    </div>
+                    <div class="col d-grid">
+                        <button type="submit" class="btn btn-danger btn-block" formaction='DeleteCategories'
+                            form="CatForm">Delete</button>
+                    </div>
+                </div>
+                <br />
+
+                <div class="d-grid">
+                    <span id="ErrMsg" asp-validation-for="Category.CatName"></span>
+                    <button type="submit" class="btn btn-primary btn-block" formaction="SaveCategories"
+                        form="CatForm">Save</button>
+                </div>
+                <br />
+            </form>
+        </div>
+
+        <div class="col-md-8 mt-3">
+            <table class="table table-striped" id="catTable">
+                <thead>
+                    <tr class="bg-primary text-white">
+                        <th></th>
+                        <th>ID</th>
+                        <th>Category Name</th>
+                        <th>Remark</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                    var sortedList = Model.CatList.OrderBy(o=>o.Id).ToList();
+                    foreach (Category cat in sortedList)
+                    {
+                    <tr>
+                        <td id="SelectRow"></td>
+                        <td id="catIdCell">@cat.Id</td>
+                        <td id="catName">@cat.CatName</td>
+                        <td id="catRemark">@cat.RRemarks</td>
+                    </tr>
+                    }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
