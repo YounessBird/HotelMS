@@ -104,7 +104,8 @@ ViewData["Title"] = "HMS Rooms Dashboard";
                 </div>
                 <br />
                 <div class="d-grid">
-                    <button type="submit" class="btn btn-primary btn-block" formaction="SaveRoom">Save</button>
+                    <button type="submit" class="btn btn-primary btn-block" id="savebtn"
+                        formaction="SaveRoom">Save</button>
                 </div>
                 <br />
             </form>
@@ -125,18 +126,21 @@ ViewData["Title"] = "HMS Rooms Dashboard";
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (Room room in Model.RoomList)
+                    @{
+                    var sortedList = Model.RoomList.OrderBy(o=>o.Id).ToList();
+                    foreach (Room room in sortedList)
                     {
                     <tr>
                         <td id="SelectRow"></td>
                         <td id="RoomId">@room.Id</td>
                         <td id="RName">@room.RName</td>
-                        <td id="RCategory">@room.RCategory?.CatName</td>
+                        <td id="RCategory" data-id="@room.RCategory?.Id">@room.RCategory?.CatName</td>
                         <td id="RLocation">@room.RLocation</td>
                         <td id="RCost">@room.RCost</td>
                         <td id="RRemark">@room.RRemarks</td>
                         <td id="RStatus">@room.Status</td>
                     </tr>
+                    }
                     }
                 </tbody>
             </table>
