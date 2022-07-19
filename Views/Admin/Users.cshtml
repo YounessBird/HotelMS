@@ -5,7 +5,7 @@ ViewData["Title"] = "HMS Rooms Dashboard";
 @model HotelMS.ViewModel.AdminUserVM
 
 <!---<h1 class="text-primary">Manage Roooms</h1> -->
-<div class="container-fluid">
+<div class="container-fluid" data-page-identifier="user" id="page">
     <div class="row">
         <div class="col-4"></div>
         <div class="col-4">
@@ -14,61 +14,116 @@ ViewData["Title"] = "HMS Rooms Dashboard";
         <div class="col-4"></div>
     </div>
     <div class="row">
-        <div class="col-md-3">
-            <form method="post">
+        <div class="col-md-3 mx-lg-5">
+            <form method="post" id="UserForm">
                 <div class="mb-3">
-                    <label asp-for="User.UName" class="form-label">User Name</label>
-                    <input asp-for="User.UName" type="text" class="form-control" id="UNameTb" placeholder="Room Name">
-                    <span id="ErrMsg" asp-validation-for="User.UName"></span>
+                    @{
+                    dynamic toastObj = new System.Dynamic.ExpandoObject();
+                    toastObj.toastIt=false;
+                    toastObj.message="";
 
+                    var toast = TempData["success"] as string;
+                    if(toast == "saved") {
+                    toastObj.toastIt=true;
+                    toastObj.message="Category added successfully";
+                    };
+                    if(toast == "deleted" ){
+                    toastObj.toastIt=true;
+                    toastObj.message="Category deleted successfully";
+                    };
+                    if(toast == "edited" ){
+                    toastObj.toastIt=true;
+                    toastObj.message="Category edited successfully";
+                    }
+
+                    if(toastObj.toastIt){
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <strong>
+                            @toastObj.message
+                        </strong>
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    };
+                    }
+                </div>
+                <div asp-validation-summary="All" class="text-danger"></div>
+                <div class="mb-3">
+                    <input type="hidden" asp-for="User.Id" id="UserId" />
+                    <label asp-for="User.UName" class="form-label">User Name</label>
+                    <input asp-for="User.UName" type="text" class="form-control" id="InName" placeholder="User Name">
+                    <span id="ErrMsg" asp-validation-for="User.UName"></span>
                 </div>
 
                 <div class="mb-3">
                     <label asp-for="User.UPhone" class="form-label">Phone</label>
-                    <input asp-for="User.UPhone" type="text" class="form-control" id="PhoneTb">
+                    <input asp-for="User.UPhone" type="text" class="form-control" id="InPhone">
                 </div>
 
                 <div class="mb-3">
                     <label asp-for="User.UGender " class="form-label">Gender</label>
                     <!-------To BE CHANGED------>
 
-                    <select asp-for="User.UGender" asp-items="@Html.GetEnumSelectList<Gender>()"></select>
+                    <select asp-for="User.UGender" asp-items="@Html.GetEnumSelectList<Gender>()"
+                        id="SecGender"></select>
                 </div>
-
-
                 <div class="mb-3">
                     <label asp-for="User.UAddress" class="form-label">Address</label>
-                    <input asp-for="User.UAddress" type="text" class="form-control" id="AddressTb">
+                    <input asp-for="User.UAddress" type="text" class="form-control" id="InAddress">
                     <span id="ErrMsg" asp-validation-for="User.UAddress" class="text-danger"></span>
                 </div>
                 <div class="mb-3">
                     <label asp-for="User.UPassword" class="form-label">Password</label>
-                    <input asp-for="User.UPassword" type="text" class="form-control" id="PasswordTb">
+                    <input asp-for="User.UPassword" type="text" class="form-control" id="InPassword">
                 </div>
+                <div class="row">
+                    <div class="col d-grid">
+                        <button type="submit" class="btn btn-warning btn-block" formaction='@Url.Action("EditUser")'
+                            form="UserForm">Edit</button>
+                    </div>
+                    <div class="col d-grid">
+                        <button type="submit" class="btn btn-danger btn-block" formaction='DeleteUser'
+                            form="UserForm">Delete</button>
+                    </div>
+                </div>
+                <br />
                 <div class="d-grid">
-                    <button type="submit" class="btn btn-primary btn-block">Save</button>
+                    <button type="submit" class="btn btn-primary btn-block" id="savebtn"
+                        formaction="SaveUser">Save</button>
                 </div>
                 <br />
             </form>
         </div>
 
-        <div class="col-md9">
-            <table class="table table-striped">
+        <div class="col-md-8 mt-3">
+            <table class="table table-striped" id="userTable">
                 <thead>
                     <tr class="bg-primary text-white">
-                        <th>Rooms</th>
-                        <th>number</th>
-                        <th>something</th>
+                        <th></th>
+                        <th>Id</th>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>Gender</th>
+                        <th>Address</th>
+                        <th>Password</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (Room room in Model.RoomList)
+                    @{
+                    var sortedList =Model.UserList.OrderBy(o=>o.Id).ToList();
+                    foreach (User user in sortedList)
                     {
                     <tr>
-                        <td>@room.RName</td>
-                        <td>@room.Id</td>
-                        <td>@room.RCategory.CatName</td>
+                        <td id="SelectRow"></td>
+                        <td id="UserId">@user.Id</td>
+                        <td id="UName">@user.UName</td>
+                        <td id="UPhone">@user.UPhone</td>
+                        <td id="UGender">@user.UGender</td>
+                        <td id="UAddress">@user.UAddress</td>
+                        <td id="UPassword">@user.UPassword</td>
                     </tr>
+                    }
                     }
                 </tbody>
             </table>
