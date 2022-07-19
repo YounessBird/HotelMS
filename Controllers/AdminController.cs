@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using HotelMS.Models;
 using HotelMS.Data;
@@ -13,6 +12,7 @@ public class AdminController : Controller
 {
     const string SessionKeyCat = "category";
     const string SessionKeyRoom = "room";
+    const string SessionKeyUser = "user";
     private readonly ApplicationDbContext _context;
 
     public AdminController(ApplicationDbContext context)
@@ -285,9 +285,7 @@ public class AdminController : Controller
             }
             catch (Exception e)
             {
-
                 ModelState.AddModelError(string.Empty, "Failure to edit category please try again");
-
                 //Todo: log the Error to a Logger 
                 return View("Categories", adminUserVM);
             }
@@ -297,55 +295,148 @@ public class AdminController : Controller
             return View("Categories", adminUserVM);
         }
     }
-    public IActionResult Users()
+
+    //Users Controller
+
+    [HttpGet]
+    [ImportModelState]
+    public async Task<IActionResult> Users()
     {
-        var adminUserVM = fakegendata();
-
-
-        return View(adminUserVM);
+        var adminUserVM = new AdminUserVM();
+        try
+        {
+            var usersList = await _context.UserTb.ToListAsync();
+            adminUserVM.UserList = usersList;
+            HttpContext.Session.Set<List<User>>(SessionKeyUser, usersList);
+            return View(adminUserVM);
+        }
+        catch (Exception e)
+        {
+            ModelState.AddModelError(string.Empty, "Failure to load data");
+            var rList = HttpContext.Session.Get<List<User>>(SessionKeyUser);
+            if (rList == null)
+            {
+                adminUserVM.UserList = new List<User>();
+            }
+            return View(adminUserVM);
+        }
     }
 
     [HttpPost]
-    public async Task<IActionResult> Users(User user)
+    [ExportModelState]
+    public async Task<IActionResult> SaveUser(User user)
     {
-        var adminUserVM = fakegendata();
-        adminUserVM.User = user;
+        Console.WriteLine("user", user);
+        var adminUserVM = new AdminUserVM();
+        var usersList = HttpContext.Session.Get<List<User>>(SessionKeyUser);
+        adminUserVM.UserList = usersList ?? new List<User>();
+
+        if (ModelState.IsValid)
+        {
+            Gender st = (Gender)long.Parse(user.UGender);
+            user.UGender = st.ToString();
+            try
+            {
+                Console.WriteLine("triggered");
+                await _context.UserTb.AddAsync(user);
+                await _context.SaveChangesAsync();
+                TempData["success"] = "saved";
+                return RedirectToAction("Users");
+            }
+            catch (Exception e)
+            {
+                //Todo: log the Error to a Logger 
+                if (e.Message.Contains("duplicate key value violates unique constraint"))
+                {
+                    ModelState.AddModelError(string.Empty, "Hit the edit button to edit the form");
+                }
+                ModelState.AddModelError(string.Empty, "Failure to register room please try again");
+
+                //Todo: log the Error to a Logger 
+                return RedirectToAction("Users", adminUserVM);
+            }
+        }
+        else
+        {
+            return RedirectToAction("Users", adminUserVM);
+        }
+    }
+
+    [HttpPost]
+    public IActionResult EditUser(User user)
+    {
+
+        var adminUserVM = new AdminUserVM();
+        var usersList = HttpContext.Session.Get<List<User>>(SessionKeyUser);
+
+        adminUserVM.UserList = usersList ?? new List<User>();
+
+        if (ModelState.IsValid)
+        {
+            Status st = (Status)Int64.Parse(user.UGender);
+            user.UGender = st.ToString();
+            try
+            {
+                var Entityroom = _context.UserTb.Attach(user);
+                Entityroom.State = EntityState.Modified;
+                _context.SaveChanges();
+                TempData["success"] = "edited";
+                return RedirectToAction("Users");
+            }
+
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                ModelState.AddModelError(string.Empty, "Failure to edit category please try again");
+                //Todo: log the Error to a Logger 
+                return View("Users", adminUserVM);
+            }
+        }
+        else
+        {
+            return View("Users", adminUserVM);
+        }
+    }
+
+    [HttpPost]
+    public IActionResult DeleteUser(User user)
+    {
+        Gender st = (Gender)Int64.Parse(user.UGender);
+        user.UGender = st.ToString();
+
+        var adminUserVM = new AdminUserVM();
+        var usersList = HttpContext.Session.Get<List<User>>(SessionKeyUser);
+
+        adminUserVM.UserList = usersList ?? new List<User>();
 
         if (ModelState.IsValid)
         {
             try
             {
-                await _context.UserTb.AddAsync(user);
-                await _context.SaveChangesAsync();
-                return View(adminUserVM);
+                var Entityroom = _context.UserTb.Find(user.Id);
+                if (Entityroom != null)
+                {
+                    _context.UserTb.Remove(Entityroom);
+                    _context.SaveChanges();
+                    TempData["success"] = "deleted";
+                    return RedirectToAction("Users");
+                }
+                else
+                {
+                    return View("Users", adminUserVM);
+                }
+
             }
             catch (Exception e)
             {
+                ModelState.AddModelError(string.Empty, "Failure to edit category please try again");
                 //Todo: log the Error to a Logger 
-                ModelState.AddModelError(string.Empty, e.Message);
-                return View(adminUserVM);
+                return View("Users", adminUserVM);
             }
         }
         else
         {
-            return View(adminUserVM);
+            return View("Users", adminUserVM);
         }
-    }
-
-    public AdminUserVM fakegendata()
-    {
-        List<Room> rooomList = new List<Room>()
-        {
-           new Room{Id=1,RName="Lux",RCategory= new Category{Id=1,CatName="LUX"},RLocation="London",RCost=100},
-           new Room{Id=2,RName="Lux2",RCategory= new Category{Id=2,CatName="LUX2"},RLocation="London",RCost=100},
-    };
-
-
-        AdminUserVM AdminUserVM = new AdminUserVM
-        {
-            Category = null,
-            RoomList = rooomList,
-        };
-        return AdminUserVM;
     }
 }
