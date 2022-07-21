@@ -54,17 +54,19 @@ public class AdminController : Controller
         }
     }
     [HttpPost]
+    [ExportModelState]
+
     public async Task<IActionResult> SaveRoom(Room room)
     {
-        Status st = (Status)Int64.Parse(room.Status);
-        room.Status = st.ToString();
+
         var adminUserVM = new AdminUserVM();
         var roomsList = HttpContext.Session.Get<List<Room>>(SessionKeyRoom);
-
         adminUserVM.RoomList = roomsList ?? new List<Room>();
 
         if (ModelState.IsValid)
         {
+            Status st = (Status)long.Parse(room.Status);
+            room.Status = st.ToString();
             try
             {
 
@@ -76,21 +78,25 @@ public class AdminController : Controller
 
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                if (e.Message.Contains("duplicate key value violates unique constraint"))
+                {
+                    ModelState.AddModelError(string.Empty, "Hit the edit button to edit the form");
+                }
                 ModelState.AddModelError(string.Empty, "Failure to register room please try again");
 
                 //Todo: log the Error to a Logger 
-                return View("Rooms", adminUserVM);
+                return RedirectToAction("Rooms", adminUserVM);
             }
         }
         else
         {
-            return View("Rooms", adminUserVM);
+            return RedirectToAction("Rooms", adminUserVM);
         }
     }
     [HttpPost]
     public IActionResult EditRoom(Room room)
     {
+
         var adminUserVM = new AdminUserVM();
         var roomsList = HttpContext.Session.Get<List<Room>>(SessionKeyRoom);
 
@@ -98,6 +104,8 @@ public class AdminController : Controller
 
         if (ModelState.IsValid)
         {
+            Status st = (Status)Int64.Parse(room.Status);
+            room.Status = st.ToString();
             try
             {
                 var Entityroom = _context.RoomTb.Attach(room);
@@ -123,6 +131,9 @@ public class AdminController : Controller
     [HttpPost]
     public IActionResult DeleteRoom(Room room)
     {
+        Status st = (Status)Int64.Parse(room.Status);
+        room.Status = st.ToString();
+
         var adminUserVM = new AdminUserVM();
         var roomList = HttpContext.Session.Get<List<Room>>(SessionKeyRoom);
 
@@ -326,7 +337,6 @@ public class AdminController : Controller
     [ExportModelState]
     public async Task<IActionResult> SaveUser(User user)
     {
-        Console.WriteLine("user", user);
         var adminUserVM = new AdminUserVM();
         var usersList = HttpContext.Session.Get<List<User>>(SessionKeyUser);
         adminUserVM.UserList = usersList ?? new List<User>();
@@ -337,7 +347,6 @@ public class AdminController : Controller
             user.UGender = st.ToString();
             try
             {
-                Console.WriteLine("triggered");
                 await _context.UserTb.AddAsync(user);
                 await _context.SaveChangesAsync();
                 TempData["success"] = "saved";
