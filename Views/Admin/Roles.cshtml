@@ -1,0 +1,119 @@
+@{
+Layout= "_AdminLayout";
+ViewData["Title"] = "Roles";
+}
+
+@model HotelMS.ViewModel.AccountVM
+
+
+<div class="container-fluid" data-page-identifier="role" id="page">
+    <div class="row">
+        <div class="col-4"></div>
+        <div class="col-4">
+            <h1 class="text-primary text-center class">Roles</h1>
+        </div>
+        <div class="col-4"></div>
+    </div>
+    <div class="row">
+        <div class="col-md-3 mx-lg-5">
+
+            <form method="post" enctype="application/x-www-form-urlencoded">
+                <div class="mb-3">
+                    @{
+                    dynamic toastObj = new System.Dynamic.ExpandoObject();
+                    toastObj.toastIt=false;
+                    toastObj.message="";
+
+                    var toast = TempData["success"] as string;
+                    if(toast == "saved") {
+                    toastObj.toastIt=true;
+                    toastObj.message="Role added successfully";
+                    };
+                    if(toast == "deleted" ){
+                    toastObj.toastIt=true;
+                    toastObj.message="RoLE deleted successfully";
+                    };
+                    if(toast == "edited" ){
+                    toastObj.toastIt=true;
+                    toastObj.message="Role edited successfully";
+                    }
+
+                    if(toastObj.toastIt){
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <strong>
+                            @toastObj.message
+                        </strong>
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    };
+                    }
+                </div>
+                <div asp-validation-summary="All" class="text-danger"></div>
+
+                <div class="form-group">
+                    <input type="hidden" asp-for="Role.Id" id="RoleId" />
+                    <label asp-for="Role.RName">Role Name</label>
+                    <input asp-for="Role.RName" class="form-control" id="InRole" type="text"
+                        placeholder=" Enter Role Name" />
+                </div>
+                <div class="row">
+                    <div class="col d-grid">
+                        <button type="submit" class="btn btn-warning btn-block"
+                            formaction='@Url.Action("EditRole")'>Edit</button>
+                    </div>
+                    <div class="col d-grid">
+                        <button type="submit" class="btn btn-danger btn-block" formaction='DeleteRole'>Delete</button>
+                    </div>
+                </div>
+                <br />
+                <div class="d-grid">
+                    <button type="submit" formaction='@Url.Action("CreateRole")' id="savebtn"
+                        class="btn btn-primary btn-block">
+                        Add Role
+                    </button>
+                </div>
+                <br />
+            </form>
+        </div>
+        <div class="col-md-8 mt-3">
+            <table class="table table-striped" id="roleTable">
+                <thead>
+                    <tr class="bg-primary text-white">
+                        <th></th>
+                        <th>Id</th>
+                        <th>Role Name</th>
+                        <th>Users</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                    var sortedList = Model.RolesTbList?.OrderBy(o=>o.Id).ToList();
+                    foreach (AppRole? role in sortedList)
+                    {
+                    <tr>
+                        <td id="SelectRow"></td>
+                        <td id="RoleId">@role.Id</td>
+                        <td id="RName">@role.Name</td>
+                        @{
+                        var userNamesList = Model.UserInRole[@role.Id];
+                        if (userNamesList.Count>0){
+                        @foreach (string name in userNamesList){
+                        <td id="RName">@name</td>
+                        }
+                        }
+                        else{
+                        <td id="RName"></td>
+                        }
+                        }
+
+
+                    </tr>
+                    }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
