@@ -2,10 +2,13 @@
 using Microsoft.AspNetCore.Mvc;
 using HotelMS.Models;
 using HotelMS.Data;
+using Microsoft.AspNetCore.Authorization;
 
 namespace HotelMS.Controllers;
 
 [Route("[controller]")]
+[AllowAnonymous]
+
 public class HomeController : Controller
 {
     private readonly ApplicationDbContext _context;
