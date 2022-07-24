@@ -1,0 +1,17 @@
+.selected {
+  background-color: #aaa;
+  font-weight: bold;
+}
+#catTable {
+  cursor: pointer;
+}
+
+#roomTable {
+  cursor: pointer;
+}
+#userTable {
+  cursor: pointer;
+}
+#roleTable {
+  cursor: pointer;
+}
