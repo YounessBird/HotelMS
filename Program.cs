@@ -2,6 +2,10 @@ using System.Collections.Immutable;
 using HotelMS.ViewModel;
 using Microsoft.EntityFrameworkCore;
 using HotelMS.Data;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.Authorization;
+using HotelMS.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +16,24 @@ builder.Services.AddDbContextPool<ApplicationDbContext>(
 );
 
 builder.Services.AddDistributedMemoryCache();
+builder.Services.AddIdentity<AppUser, AppRole>(options =>
+{
+    options.Password.RequiredLength = 3;
+    options.Password.RequiredUniqueChars = 0;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireLowercase = false;
+}).AddEntityFrameworkStores<ApplicationDbContext>();
+
+// builder.Services.AddAuthorization(o => o.AddPolicy("RequireAuthenticatedUserPolicy",
+//                         builder => builder.RequireAuthenticatedUser()));
+
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
 
 builder.Services.AddSession(options =>
 {
