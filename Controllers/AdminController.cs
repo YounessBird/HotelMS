@@ -1,3 +1,4 @@
+using System.Security.AccessControl;
 using Microsoft.AspNetCore.Mvc;
 using HotelMS.Models;
 using HotelMS.Data;
@@ -5,23 +6,33 @@ using HotelMS.ViewModel;
 using Microsoft.EntityFrameworkCore;
 using HotelMS.Extensions;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 
 namespace HotelMS.Controllers;
+
 
 public class AdminController : Controller
 {
     const string SessionKeyCat = "category";
     const string SessionKeyRoom = "room";
     const string SessionKeyUser = "user";
+    const string SessionKeyRole = "role";
+
     private readonly ApplicationDbContext _context;
 
-    public AdminController(ApplicationDbContext context)
+    private RoleManager<AppRole> _roleManager;
+    private UserManager<AppUser> _userManager;
+    public AdminController(ApplicationDbContext context, RoleManager<AppRole> roleManager, UserManager<AppUser> userManager)
     {
+        _roleManager = roleManager;
+        _userManager = userManager;
         _context = context;
     }
 
     //Rooms Controller
     [HttpGet]
+    [ImportModelState]
     public async Task<IActionResult> Rooms()
     {
         var adminUserVM = new AdminUserVM();
@@ -313,21 +324,61 @@ public class AdminController : Controller
     [ImportModelState]
     public async Task<IActionResult> Users()
     {
+        // get all roles per users 
+        // display them in table with checkbox 
+        // use viewmodel property RolesInUsers Dictionary<string, List<IdentityRole>> the key is user ID List is roles of the user
+        // use _userManager to get roles per user 
+        // _userManager.isInRoleAsync(user, role.name) ans then set the key isSelected to bool 
+
         var adminUserVM = new AdminUserVM();
+
         try
         {
-            var usersList = await _context.UserTb.ToListAsync();
+            var usersList = _userManager.Users
+                    .Include(u => u.UserRoles)
+                        .ThenInclude(ur => ur.Role).AsNoTracking().ToList();
+            // var roles = _roleManager.Roles.ToList();
+            // var users = _userManager.Users.ToList();
+
+            // if (roles.Count > 0)
+            // {
+            //     // to be able to show all users we have to set a default role such as visitor to all users 
+            //     // get all roles per users
+
+            //     foreach (var user in users)
+            //     {
+            //         var rolesList = await _userManager.GetRolesAsync(user);
+            //         var usersList = await _userManager.GetUsersInRoleAsync(roleObj.Name);
+            //         usersList = usersList.Select(user => user).ToList();
+
+            //         var UserNameList = usersList.Select(o => o.UserName).ToList();
+            //         accountVM.UserInRole.Add(roleObj.Id, UserNameList);
+            //     }
+
+            //var usersList = await _context.UserTb.ToListAsync();
             adminUserVM.UserList = usersList;
-            HttpContext.Session.Set<List<User>>(SessionKeyUser, usersList);
+            HttpContext.Session.Set<List<AppUser>>(SessionKeyUser, usersList);
+            // Get all roles from db
+
+            adminUserVM.RolesList = _roleManager.Roles.Select(a => new SelectListItem()
+            {
+                Value = a.Id,
+                Text = a.Name
+            }).ToList();
+
+            // string rolename = await _userManager.GetRolesAsync(user.Id)
             return View(adminUserVM);
+
         }
+
         catch (Exception e)
         {
+            Console.WriteLine("Error message", e);
             ModelState.AddModelError(string.Empty, "Failure to load data");
-            var rList = HttpContext.Session.Get<List<User>>(SessionKeyUser);
+            var rList = HttpContext.Session.Get<List<AppUser>>(SessionKeyUser);
             if (rList == null)
             {
-                adminUserVM.UserList = new List<User>();
+                adminUserVM.UserList = new List<AppUser>();
             }
             return View(adminUserVM);
         }
@@ -337,9 +388,22 @@ public class AdminController : Controller
     [ExportModelState]
     public async Task<IActionResult> SaveUser(User user)
     {
+
+        // we have to to implement adding user to a role 
+        // get the role name and role ID from select option 
+        // add users with their passord to db 
+
         var adminUserVM = new AdminUserVM();
-        var usersList = HttpContext.Session.Get<List<User>>(SessionKeyUser);
-        adminUserVM.UserList = usersList ?? new List<User>();
+        var appuser = new AppUser()
+        {
+            Name = user.UName,
+            PhoneNumber = user.UPhone,
+            Gender = user.UGender,
+            Email = user.UEmail,
+            GenericPassword = user.UPassword, // Note this may have to change to conceal password as at the moment it is used to store a one time password for users 
+        };
+        var usersList = HttpContext.Session.Get<List<AppUser>>(SessionKeyUser);
+        adminUserVM.UserList = usersList ?? new List<AppUser>();
 
         if (ModelState.IsValid)
         {
@@ -347,10 +411,20 @@ public class AdminController : Controller
             user.UGender = st.ToString();
             try
             {
-                await _context.UserTb.AddAsync(user);
-                await _context.SaveChangesAsync();
-                TempData["success"] = "saved";
-                return RedirectToAction("Users");
+                // await _context.UserTb.AddAsync(user);
+                // await _context.SaveChangesAsync();
+                var result = await _userManager.CreateAsync(appuser, user.UPassword);
+                if (result.Succeeded)
+                {
+                    TempData["success"] = "saved";
+                    return RedirectToAction("Users");
+                }
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError("", error.Description);
+                    return RedirectToAction("Users");
+                }
+
             }
             catch (Exception e)
             {
@@ -369,28 +443,55 @@ public class AdminController : Controller
         {
             return RedirectToAction("Users", adminUserVM);
         }
+        return View("Users");
     }
 
     [HttpPost]
-    public IActionResult EditUser(User user)
+    [ExportModelState]
+    public async Task<IActionResult> EditUser(EditUser EditedUser)
     {
 
         var adminUserVM = new AdminUserVM();
-        var usersList = HttpContext.Session.Get<List<User>>(SessionKeyUser);
 
-        adminUserVM.UserList = usersList ?? new List<User>();
+        // this might be unnecessary 
+        var usersList = HttpContext.Session.Get<List<AppUser>>(SessionKeyUser);
+
+        adminUserVM.UserList = usersList ?? new List<AppUser>();
 
         if (ModelState.IsValid)
         {
-            Status st = (Status)Int64.Parse(user.UGender);
-            user.UGender = st.ToString();
             try
             {
-                var Entityroom = _context.UserTb.Attach(user);
-                Entityroom.State = EntityState.Modified;
-                _context.SaveChanges();
-                TempData["success"] = "edited";
-                return RedirectToAction("Users");
+
+                var user = await _userManager.FindByIdAsync(EditedUser.Id);
+                if (user == null)
+                {
+                    ModelState.AddModelError("", "User can not be found ");
+                    return View("Users", adminUserVM);
+                }
+                else
+                {
+
+
+                    Status st = (Status)Int64.Parse(EditedUser.UGender);
+                    EditedUser.UGender = st.ToString();
+                    user.Name = EditedUser.UName;
+                    user.Email = EditedUser.UEmail;
+                    user.Gender = EditedUser.UGender;
+                    user.PhoneNumber = EditedUser.UPhone;
+
+                    var result = await _userManager.UpdateAsync(user);
+                    if (result.Succeeded)
+                    {
+                        TempData["success"] = "edited";
+                        return RedirectToAction("Users");
+                    }
+                    foreach (var error in result.Errors)
+                    {
+                        ModelState.AddModelError("", error.Description);
+                        return RedirectToAction("Users");
+                    }
+                }
             }
 
             catch (Exception e)
@@ -405,47 +506,213 @@ public class AdminController : Controller
         {
             return View("Users", adminUserVM);
         }
+        return View("Users");
+    }
+
+    // [HttpPost]
+    // public IActionResult DeleteUser(User user)
+    // {
+    //     Gender st = (Gender)Int64.Parse(user.UGender);
+    //     user.UGender = st.ToString();
+
+    //     var adminUserVM = new AdminUserVM();
+    //     var usersList = HttpContext.Session.Get<List<User>>(SessionKeyUser);
+
+    //     adminUserVM.UserList = usersList ?? new List<User>();
+
+    //     if (ModelState.IsValid)
+    //     {
+    //         try
+    //         {
+    //             var Entityroom = _context.UserTb.Find(user.Id);
+    //             if (Entityroom != null)
+    //             {
+    //                 _context.UserTb.Remove(Entityroom);
+    //                 _context.SaveChanges();
+    //                 TempData["success"] = "deleted";
+    //                 return RedirectToAction("Users");
+    //             }
+    //             else
+    //             {
+    //                 return View("Users", adminUserVM);
+    //             }
+
+    //         }
+    //         catch (Exception e)
+    //         {
+    //             ModelState.AddModelError(string.Empty, "Failure to edit category please try again");
+    //             //Todo: log the Error to a Logger 
+    //             return View("Users", adminUserVM);
+    //         }
+    //     }
+    //     else
+    //     {
+    //         return View("Users", adminUserVM);
+    //     }
+    // }
+    //[HttpPost]
+    // public IActionResult UpdateUserRole(UserRoles userRoles)
+    // {
+
+
+
+    //     Gender st = (Gender)Int64.Parse(user.UGender);
+    //     user.UGender = st.ToString();
+
+    //     var adminUserVM = new AdminUserVM();
+    //     var usersList = HttpContext.Session.Get<List<User>>(SessionKeyUser);
+
+    //     adminUserVM.UserList = usersList ?? new List<User>();
+
+    //     if (ModelState.IsValid)
+    //     {
+    //         try
+    //         {
+    //             var Entityroom = _context.UserTb.Find(user.Id);
+    //             if (Entityroom != null)
+    //             {
+    //                 _context.UserTb.Remove(Entityroom);
+    //                 _context.SaveChanges();
+    //                 TempData["success"] = "deleted";
+    //                 return RedirectToAction("Users");
+    //             }
+    //             else
+    //             {
+    //                 return View("Users", adminUserVM);
+    //             }
+
+    //         }
+    //         catch (Exception e)
+    //         {
+    //             ModelState.AddModelError(string.Empty, "Failure to edit category please try again");
+    //             //Todo: log the Error to a Logger 
+    //             return View("Users", adminUserVM);
+    //         }
+    //     }
+    //     else
+    //     {
+    //         return View("Users", adminUserVM);
+    //     }
+    // }
+
+    [HttpGet]
+    [ImportModelState]
+    public async Task<IActionResult> Roles()
+    {
+        AccountVM accountVM = new();
+        try
+        {
+            var roles = _roleManager.Roles.ToList();
+
+            if (roles.Count > 0)
+            {
+
+                foreach (var roleObj in roles)
+                {
+                    var usersList = await _userManager.GetUsersInRoleAsync(roleObj.Name);
+                    var UserNameList = usersList.Select(o => o.UserName).ToList();
+                    accountVM.UserInRole.Add(roleObj.Id, UserNameList);
+                }
+                accountVM.RolesTbList = roles;
+                HttpContext.Session.Set<List<AppRole>>(SessionKeyRole, roles);
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
+
+        return View(accountVM);
+    }
+
+
+    [ExportModelState]
+    [HttpPost]
+    public async Task<IActionResult> CreateRole(RoleVm Role)
+    {
+        var accountVM = new AccountVM();
+        var rolesList = HttpContext.Session.Get<List<AppRole>>(SessionKeyRole);
+        accountVM.RolesTbList = rolesList ?? new List<AppRole>();
+
+        if (ModelState.IsValid)
+        {
+            AppRole appRole = new()
+            {
+                Name = Role.RName
+            };
+            try
+            {
+                IdentityResult result = await _roleManager.CreateAsync(appRole);
+                if (result.Succeeded)
+                {
+                    TempData["success"] = "saved";
+                    return RedirectToAction("Roles");
+                }
+                foreach (IdentityError error in result.Errors)
+                {
+                    ModelState.AddModelError("", error.Description);
+                }
+            }
+            catch (Exception e)
+            {
+                ModelState.AddModelError("", "Failed to create Role");
+                //Todo log errors
+                Console.WriteLine("Exception", e);
+
+                return RedirectToAction("Roles");
+            }
+        }
+        return View("Roles", accountVM);
     }
 
     [HttpPost]
-    public IActionResult DeleteUser(User user)
+    public async Task<IActionResult> EditRole(RoleVm Role)
     {
-        Gender st = (Gender)Int64.Parse(user.UGender);
-        user.UGender = st.ToString();
-
-        var adminUserVM = new AdminUserVM();
-        var usersList = HttpContext.Session.Get<List<User>>(SessionKeyUser);
-
-        adminUserVM.UserList = usersList ?? new List<User>();
+        var accountVM = new AccountVM();
+        var rolesList = HttpContext.Session.Get<List<AppRole>>(SessionKeyRole);
+        accountVM.RolesTbList = rolesList ?? new List<AppRole>();
 
         if (ModelState.IsValid)
         {
             try
             {
-                var Entityroom = _context.UserTb.Find(user.Id);
-                if (Entityroom != null)
+                var role = await _roleManager.FindByIdAsync(Role.Id);
+                if (role == null)
                 {
-                    _context.UserTb.Remove(Entityroom);
-                    _context.SaveChanges();
-                    TempData["success"] = "deleted";
-                    return RedirectToAction("Users");
+                    ModelState.AddModelError("", $"Role with Id {Role.Id} can not be found");
+                    return View("Roles", accountVM);
+                }
+
+                role.Name = Role.RName;
+
+                var result = await _roleManager.UpdateAsync(role);
+                if (result.Succeeded)
+                {
+                    TempData["success"] = "edited";
+                    return RedirectToAction("Roles");
                 }
                 else
                 {
-                    return View("Users", adminUserVM);
+                    foreach (var error in result.Errors)
+                    {
+                        ModelState.AddModelError("", error.Description);
+                    }
+                    return View("Roles", accountVM);
                 }
 
             }
+
             catch (Exception e)
             {
-                ModelState.AddModelError(string.Empty, "Failure to edit category please try again");
+                Console.WriteLine(e);
+                ModelState.AddModelError(string.Empty, "Failure to edit Role please try again");
                 //Todo: log the Error to a Logger 
-                return View("Users", adminUserVM);
+                return View("Roles", accountVM);
             }
         }
         else
         {
-            return View("Users", adminUserVM);
+            return View("Roles", accountVM);
         }
     }
 }
