@@ -69,13 +69,21 @@ ViewData["Title"] = "HMS Rooms Dashboard";
                         id="SecGender"></select>
                 </div>
                 <div class="mb-3">
-                    <label asp-for="User.UAddress" class="form-label">Address</label>
-                    <input asp-for="User.UAddress" type="text" class="form-control" id="InAddress">
-                    <span id="ErrMsg" asp-validation-for="User.UAddress" class="text-danger"></span>
+                    <label asp-for="User.UEmail" class="form-label">Address</label>
+                    <input asp-for="User.UEmail" type="text" class="form-control" id="InAddress">
+                    <span id="ErrMsg" asp-validation-for="User.UEmail" class="text-danger"></span>
                 </div>
                 <div class="mb-3">
                     <label asp-for="User.UPassword" class="form-label">Password</label>
                     <input asp-for="User.UPassword" type="text" class="form-control" id="InPassword">
+                </div>
+                <div class="mb-3">
+                    <label asp-for="@Model.Role.Id" class="form-label">Roles</label>
+
+                    <select asp-for="@Model.Role.Id " asp-items="@Model.RolesList">
+                        <option value="0">No Role</option>
+                        <option value="1">Remove Current Role</option>
+                    </select>
                 </div>
                 <div class="row">
                     <div class="col d-grid">
