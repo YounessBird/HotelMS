@@ -18,6 +18,7 @@ builder.Services.AddDbContextPool<ApplicationDbContext>(
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddIdentity<AppUser, AppRole>(options =>
 {
+    options.User.RequireUniqueEmail = true;
     options.Password.RequiredLength = 3;
     options.Password.RequiredUniqueChars = 0;
     options.Password.RequireNonAlphanumeric = false;
@@ -55,6 +56,8 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
+app.UseAuthentication();
+
 app.UseRouting();
 
 app.UseAuthorization();
@@ -63,7 +66,7 @@ app.UseSession();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}").RequireAuthorization();
 // builder.Services.AddMvc();
 // builder.Services.AddControllers(options => options.EnableEndpointRouting = false);
 // app.UseMvc();
