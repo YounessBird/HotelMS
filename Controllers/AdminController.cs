@@ -8,6 +8,7 @@ using HotelMS.Extensions;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace HotelMS.Controllers;
 
@@ -394,8 +395,12 @@ public class AdminController : Controller
         // add users with their passord to db 
 
         var adminUserVM = new AdminUserVM();
+        Gender st = (Gender)long.Parse(user.UGender);
+        user.UGender = st.ToString();
+
         var appuser = new AppUser()
         {
+            UserName = user.UEmail,
             Name = user.UName,
             PhoneNumber = user.UPhone,
             Gender = user.UGender,
@@ -428,12 +433,13 @@ public class AdminController : Controller
             }
             catch (Exception e)
             {
+                Console.WriteLine($" ---- Exception {e}");
                 //Todo: log the Error to a Logger 
                 if (e.Message.Contains("duplicate key value violates unique constraint"))
                 {
                     ModelState.AddModelError(string.Empty, "Hit the edit button to edit the form");
                 }
-                ModelState.AddModelError(string.Empty, "Failure to register room please try again");
+                ModelState.AddModelError(string.Empty, "Failure to register user please try again");
 
                 //Todo: log the Error to a Logger 
                 return RedirectToAction("Users", adminUserVM);
@@ -657,7 +663,7 @@ public class AdminController : Controller
             {
                 ModelState.AddModelError("", "Failed to create Role");
                 //Todo log errors
-                Console.WriteLine("Exception", e);
+                Console.WriteLine(e);
 
                 return RedirectToAction("Roles");
             }
