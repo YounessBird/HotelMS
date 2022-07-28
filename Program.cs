@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using HotelMS.Models;
+using Newtonsoft.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,7 +15,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddDbContextPool<ApplicationDbContext>(
     o => o.UseNpgsql(builder.Configuration.GetConnectionString("HMSDB"))
 );
-
+builder.Services.AddMvc().AddNewtonsoftJson(options => options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore);
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddIdentity<AppUser, AppRole>(options =>
 {
