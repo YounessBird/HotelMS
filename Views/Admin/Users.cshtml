@@ -3,6 +3,10 @@ Layout= "_AdminLayout";
 ViewData["Title"] = "HMS Rooms Dashboard";
 }
 @model HotelMS.ViewModel.AdminUserVM
+@section EditIcon {
+<link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
+}
 
 <!---<h1 class="text-primary">Manage Roooms</h1> -->
 <div class="container-fluid" data-page-identifier="user" id="page">
@@ -109,27 +113,42 @@ ViewData["Title"] = "HMS Rooms Dashboard";
                 <thead>
                     <tr class="bg-primary text-white">
                         <th></th>
-                        <th>Id</th>
+                        <th hidden>Id</th>
                         <th>Name</th>
                         <th>Phone</th>
                         <th>Gender</th>
                         <th>Address</th>
+                        <th>Current Role</th>
                         <th>Password</th>
+                        <th>EditProfile</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="userTablebody">
                     @{
                     var sortedList =Model.UserList.OrderBy(o=>o.Id).ToList();
-                    foreach (User user in sortedList)
+                    foreach (var user in sortedList)
                     {
                     <tr>
                         <td id="SelectRow"></td>
-                        <td id="UserId">@user.Id</td>
-                        <td id="UName">@user.UName</td>
-                        <td id="UPhone">@user.UPhone</td>
-                        <td id="UGender">@user.UGender</td>
-                        <td id="UAddress">@user.UAddress</td>
-                        <td id="UPassword">@user.UPassword</td>
+                        <td hidden id="UserId">@user.Id</td>
+                        <td id="UName">@user.Name</td>
+                        <td id="UPhone">@user.Phone</td>
+                        <td id="UGender">@user.Gender</td>
+                        <td id="UAddress">@user.Email</td>
+                        <td>
+                            @foreach (var RoleName in user.RoleNameList)
+                            {
+                            <div class="form-check m-1 No-Table-Click">
+                                <label class="form-check-label checkbox-role  No-Table-Click">@RoleName</label>
+                            </div>
+                            }
+                        </td>
+
+                        <td id="UPassword">@user.Password</td>
+                        <td>
+                            <a asp-action="UserProfile" asp-route-id="@user.Id"><span
+                                    class="material-symbols-outlined No-Table-Click">edit</span></a>
+                        </td>
                     </tr>
                     }
                     }
