@@ -11,7 +11,6 @@ namespace HotelMS.ViewModel
         public UserId? Id { get; set; }
         public User User { get; set; } // this has to extend from IdentityUser
         public List<UserDetailsDto>? UserList { get; set; } // Note this may have to change to IdentityUser at the moment it's converted from identityuser to User in the controller 
-        public EditUser EditedUser { get; set; }
         public Category Category { get; set; }
         // this might be obsolete
         public List<Category> CatList { get; set; }
