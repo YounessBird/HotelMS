@@ -333,56 +333,35 @@ public class AdminController : Controller
 
         var adminUserVM = new AdminUserVM();
 
+
         try
         {
-            var usersList = _userManager.Users
+            adminUserVM.UserList = _userManager.Users
                     .Include(u => u.UserRoles)
-                        .ThenInclude(ur => ur.Role).AsNoTracking().ToList();
-            // var roles = _roleManager.Roles.ToList();
-            // var users = _userManager.Users.ToList();
-
-            // if (roles.Count > 0)
-            // {
-            //     // to be able to show all users we have to set a default role such as visitor to all users 
-            //     // get all roles per users
-
-            //     foreach (var user in users)
-            //     {
-            //         var rolesList = await _userManager.GetRolesAsync(user);
-            //         var usersList = await _userManager.GetUsersInRoleAsync(roleObj.Name);
-            //         usersList = usersList.Select(user => user).ToList();
-
-            //         var UserNameList = usersList.Select(o => o.UserName).ToList();
-            //         accountVM.UserInRole.Add(roleObj.Id, UserNameList);
-            //     }
-
-            //var usersList = await _context.UserTb.ToListAsync();
-            adminUserVM.UserList = usersList;
-            HttpContext.Session.Set<List<AppUser>>(SessionKeyUser, usersList);
-            // Get all roles from db
-
-            adminUserVM.RolesList = _roleManager.Roles.Select(a => new SelectListItem()
-            {
-                Value = a.Id,
-                Text = a.Name
-            }).ToList();
-
-            // string rolename = await _userManager.GetRolesAsync(user.Id)
-            return View(adminUserVM);
+                        .ThenInclude(ur => ur.Role).AsNoTracking().Select(o => new UserDetailsDto()
+                        {
+                            Id = o.Id,
+                            Name = o.Name,
+                            Email = o.Email,
+                            Gender = o.Gender,
+                            Phone = o.PhoneNumber,
+                            Password = o.GenericPassword,
+                            RoleNameList = o.UserRoles.Select(o => o.Role.Name).ToList(),
+                        }).ToList();
+            HttpContext.Session.Set<List<UserDetailsDto>>(SessionKeyUser, adminUserVM.UserList);
 
         }
-
         catch (Exception e)
         {
-            Console.WriteLine("Error message", e);
+            Console.WriteLine(e);
             ModelState.AddModelError(string.Empty, "Failure to load data");
-            var rList = HttpContext.Session.Get<List<AppUser>>(SessionKeyUser);
+            var rList = HttpContext.Session.Get<List<UserDetailsDto>>(SessionKeyUser);
             if (rList == null)
             {
-                adminUserVM.UserList = new List<AppUser>();
+                adminUserVM.UserList = new List<UserDetailsDto>();
             }
-            return View(adminUserVM);
         }
+        return View(adminUserVM);
     }
 
     [HttpPost]
@@ -407,18 +386,24 @@ public class AdminController : Controller
             Email = user.UEmail,
             GenericPassword = user.UPassword, // Note this may have to change to conceal password as at the moment it is used to store a one time password for users 
         };
-        var usersList = HttpContext.Session.Get<List<AppUser>>(SessionKeyUser);
-        adminUserVM.UserList = usersList ?? new List<AppUser>();
+        var usersList = HttpContext.Session.Get<List<UserDetailsDto>>(SessionKeyUser);
+        adminUserVM.UserList = usersList ?? new List<UserDetailsDto>();
 
         if (ModelState.IsValid)
         {
-            Gender st = (Gender)long.Parse(user.UGender);
-            user.UGender = st.ToString();
+            Console.WriteLine("Passed");
+
             try
             {
                 // await _context.UserTb.AddAsync(user);
                 // await _context.SaveChangesAsync();
                 var result = await _userManager.CreateAsync(appuser, user.UPassword);
+                // Console.WriteLine($"---------Role {user.Role.Name}");
+                // if (String.IsNullOrEmpty(user.Role.Name))
+                // {
+                //     Console.WriteLine("should not trigg if null");
+                //     await _userManager.AddToRoleAsync(appuser, user.Role.Name);
+                // }
                 if (result.Succeeded)
                 {
                     TempData["success"] = "saved";
@@ -447,6 +432,7 @@ public class AdminController : Controller
         }
         else
         {
+            Console.WriteLine("Error");
             return RedirectToAction("Users", adminUserVM);
         }
         return View("Users");
