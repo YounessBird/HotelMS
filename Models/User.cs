@@ -5,7 +5,7 @@ namespace HotelMS.Models
 {
     public class User
     {
-        public int? Id { get; set; }
+        public string? Id { get; set; }
         [Required(ErrorMessage = "Please fill in the Name field")]
         [MaxLength(50, ErrorMessage = "Name cannot exceed 50 characters")]
         public string? UName { get; set; }
