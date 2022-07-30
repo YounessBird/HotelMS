@@ -81,22 +81,15 @@ ViewData["Title"] = "HMS Rooms Dashboard";
                     <label asp-for="User.UPassword" class="form-label">Password</label>
                     <input asp-for="User.UPassword" type="text" class="form-control" id="InPassword">
                 </div>
-                <div class="mb-3">
-                    <label asp-for="@Model.Role.Id" class="form-label">Roles</label>
-
-                    <select asp-for="@Model.Role.Id " asp-items="@Model.RolesList">
-                        <option value="0">No Role</option>
-                        <option value="1">Remove Current Role</option>
-                    </select>
-                </div>
                 <div class="row">
                     <div class="col d-grid">
-                        <button type="submit" class="btn btn-warning btn-block" formaction='@Url.Action("EditUser")'
-                            form="UserForm">Edit</button>
+                        <button type="submit" class="btn btn-warning btn-block" id="editbtn"
+                            formaction='@Url.Action("EditUser")' form="UserForm">Edit</button>
                     </div>
                     <div class="col d-grid">
-                        <button type="submit" class="btn btn-danger btn-block" formaction='DeleteUser'
-                            form="UserForm">Delete</button>
+                        <input type="hidden" asp-for="Id" id="UserDelId" />
+                        <button type="submit" class="btn btn-danger btn-block" id="deletebtn"
+                            formaction='DeleteUser'>Delete</button>
                     </div>
                 </div>
                 <br />
