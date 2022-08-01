@@ -10,7 +10,7 @@ namespace HotelMS.Models
         public int RoomId { get; set; }
         [ForeignKey("RoomId")]
         public Room? BRoom { get; set; }
-        public int AgentId { get; set; }
+        public string AgentId { get; set; }
         [ForeignKey("AgentId")]
         public User Agent { get; set; }
         public DateTime? DateIn { get; set; }
