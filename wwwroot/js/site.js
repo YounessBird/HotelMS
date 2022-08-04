@@ -125,12 +125,17 @@ function user_highlight_row() {
   var inputName = document.getElementById("InName");
   var inputPhone = document.getElementById("InPhone");
   var inputGender = document.getElementById("SecGender");
-  var inputAdress = document.getElementById("InAddress");
+  var inputAddress = document.getElementById("InAddress");
   var inputPassword = document.getElementById("InPassword");
   var inputId = document.getElementById("UserId");
+  var inputDelId = document.getElementById("UserDelId");
   var saveButton = document.getElementById("savebtn");
 
   table.onclick = function (e) {
+    if (e.target.classList.contains("No-Table-Click")) {
+      e.preventDefault;
+      return;
+    }
     var rowSelected = e.target.parentElement;
     for (var i = 0; i < rows.length; i++) {
       if (rows[i].className == "selected") {
@@ -139,7 +144,7 @@ function user_highlight_row() {
           inputName.value = "";
           inputPhone.value = "";
           inputGender.value = "";
-          inputAdress.value = "";
+          inputAddress.value = "";
           inputPassword.value = "";
           inputId.value = "";
           saveButton.style.display = "block";
@@ -163,7 +168,7 @@ function user_highlight_row() {
           return;
         }
         case "UAddress": {
-          inputAdress.value = el.innerText;
+          inputAddress.value = el.innerText;
           return;
         }
         case "UPassword": {
@@ -177,6 +182,7 @@ function user_highlight_row() {
         }
         case "UserId": {
           inputId.value = el.innerText;
+          inputDelId.value = el.innerText;
         }
         default:
           break;
