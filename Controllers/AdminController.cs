@@ -440,22 +440,22 @@ public class AdminController : Controller
 
     [HttpPost]
     [ExportModelState]
-    public async Task<IActionResult> EditUser(EditUser EditedUser)
+    public async Task<IActionResult> EditUser(User User)
     {
-
+        Console.WriteLine($"-----{User.UGender}");
         var adminUserVM = new AdminUserVM();
 
         // this might be unnecessary 
-        var usersList = HttpContext.Session.Get<List<AppUser>>(SessionKeyUser);
+        var usersList = HttpContext.Session.Get<List<UserDetailsDto>>(SessionKeyUser);
 
-        adminUserVM.UserList = usersList ?? new List<AppUser>();
+        adminUserVM.UserList = usersList ?? new List<UserDetailsDto>();
 
         if (ModelState.IsValid)
         {
             try
             {
 
-                var user = await _userManager.FindByIdAsync(EditedUser.Id);
+                var user = await _userManager.FindByIdAsync(User.Id);
                 if (user == null)
                 {
                     ModelState.AddModelError("", "User can not be found ");
@@ -463,14 +463,12 @@ public class AdminController : Controller
                 }
                 else
                 {
-
-
-                    Status st = (Status)Int64.Parse(EditedUser.UGender);
-                    EditedUser.UGender = st.ToString();
-                    user.Name = EditedUser.UName;
-                    user.Email = EditedUser.UEmail;
-                    user.Gender = EditedUser.UGender;
-                    user.PhoneNumber = EditedUser.UPhone;
+                    Gender st = (Gender)long.Parse(User.UGender);
+                    User.UGender = st.ToString();
+                    user.Name = User.UName;
+                    user.Email = User.UEmail;
+                    user.Gender = st.ToString();
+                    user.PhoneNumber = User.UPhone;
 
                     var result = await _userManager.UpdateAsync(user);
                     if (result.Succeeded)
@@ -496,52 +494,56 @@ public class AdminController : Controller
         }
         else
         {
-            return View("Users", adminUserVM);
+            Console.WriteLine("error");
+            return RedirectToAction("Users");
         }
         return View("Users");
     }
 
-    // [HttpPost]
-    // public IActionResult DeleteUser(User user)
-    // {
-    //     Gender st = (Gender)Int64.Parse(user.UGender);
-    //     user.UGender = st.ToString();
+    [HttpPost]
+    public async Task<IActionResult> DeleteUser(UserId model)
+    {
+        var adminUserVM = new AdminUserVM();
+        Console.WriteLine($"UserId {model.Id}");
+        // this might be unnecessary 
+        var usersList = HttpContext.Session.Get<List<UserDetailsDto>>(SessionKeyUser);
+        adminUserVM.UserList = usersList ?? new List<UserDetailsDto>();
 
-    //     var adminUserVM = new AdminUserVM();
-    //     var usersList = HttpContext.Session.Get<List<User>>(SessionKeyUser);
+        try
+        {
+            var user = await _userManager.FindByIdAsync(model.Id);
+            if (user == null)
+            {
+                ModelState.AddModelError("", "User can not be found");
+                return View("NotFound");
+            }
+            else
+            {
+                var result = await _userManager.DeleteAsync(user);
+                if (!result.Succeeded)
+                {
+                    foreach (var error in result.Errors)
+                    {
+                        ModelState.AddModelError("", error.Description);
+                        return RedirectToAction("Users");
+                    }
+                }
+                else
+                {
+                    TempData["success"] = "deleted";
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            ModelState.AddModelError(string.Empty, "Failure to edit category please try again");
+            Console.WriteLine(e);
+            //Todo: log the Error to a Logger 
+        }
+        return RedirectToAction("Users");
+    }
 
-    //     adminUserVM.UserList = usersList ?? new List<User>();
 
-    //     if (ModelState.IsValid)
-    //     {
-    //         try
-    //         {
-    //             var Entityroom = _context.UserTb.Find(user.Id);
-    //             if (Entityroom != null)
-    //             {
-    //                 _context.UserTb.Remove(Entityroom);
-    //                 _context.SaveChanges();
-    //                 TempData["success"] = "deleted";
-    //                 return RedirectToAction("Users");
-    //             }
-    //             else
-    //             {
-    //                 return View("Users", adminUserVM);
-    //             }
-
-    //         }
-    //         catch (Exception e)
-    //         {
-    //             ModelState.AddModelError(string.Empty, "Failure to edit category please try again");
-    //             //Todo: log the Error to a Logger 
-    //             return View("Users", adminUserVM);
-    //         }
-    //     }
-    //     else
-    //     {
-    //         return View("Users", adminUserVM);
-    //     }
-    // }
     //[HttpPost]
     // public IActionResult UpdateUserRole(UserRoles userRoles)
     // {
