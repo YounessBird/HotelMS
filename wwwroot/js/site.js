@@ -233,6 +233,30 @@ function role_highlight_row() {
     });
   };
 }
+function role_update_UI() {
+  var checkboxContainer = document.querySelector(".userTablebody");
+  var saveButton = document.getElementById("savebtn");
+  var EditButton = document.getElementById("editbtn");
+  var deleteButton = document.getElementById("deletebtn");
+
+  //var isChecked = document.getElementById("checkbox-role").checked;
+  let toggle = false;
+  checkboxContainer.addEventListener("change", function (e) {
+    if (e.target.classList.contains("checkbox-role")) {
+      if (e.target.checked) {
+        console.log("Checkbox is checked..", e.target.value);
+        saveButton.style.display = "none";
+        EditButton.style.display = "none";
+        EditButton.style.display = "none";
+      } else {
+        console.log("Checkbox is not checked..");
+        saveButton.style.display = "none";
+        EditButton.style.display = "none";
+        EditButton.style.display = "none";
+      }
+    }
+  });
+}
 
 var run = () => {
   var pageIdentifier = document.getElementById("page");
@@ -246,6 +270,7 @@ var run = () => {
   }
   if (identifier == "user") {
     user_highlight_row();
+    role_update_UI();
   }
   if (identifier == "role") {
     role_highlight_row();
